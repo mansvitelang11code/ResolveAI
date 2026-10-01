@@ -1,0 +1,143 @@
+import streamlit as st
+
+st.set_page_config(
+    page_title="ResolveAI",
+    page_icon="🤖"
+)
+
+# ================= KNOWLEDGE BASE =================
+
+knowledge_base = {
+    "network": {
+        "keywords": ["wifi", "wi-fi", "internet", "network"],
+        "diagnosis": "Network connectivity problem detected.",
+        "actions": [
+            "Check whether WiFi is turned ON.",
+            "Reconnect to the network.",
+            "Restart the WiFi adapter.",
+            "Restart the laptop if required."
+        ]
+    },
+
+    "performance": {
+        "keywords": ["slow", "lag", "hang", "freeze"],
+        "diagnosis": "Computer performance problem detected.",
+        "actions": [
+            "Close unnecessary applications.",
+            "Check available storage.",
+            "Restart the computer.",
+            "Check system performance if the issue continues."
+        ]
+    },
+
+    "vpn": {
+        "keywords": ["vpn", "remote access"],
+        "diagnosis": "VPN / remote access problem detected.",
+        "actions": [
+            "Check internet connection.",
+            "Reconnect to VPN.",
+            "Restart the VPN application."
+        ]
+    }
+}
+
+
+# ================= AGENT =================
+
+def resolve_issue(problem):
+
+    text = problem.lower()
+
+    # Agent selects the relevant knowledge
+    selected_issue = None
+
+    for issue, data in knowledge_base.items():
+        for keyword in data["keywords"]:
+            if keyword in text:
+                selected_issue = issue
+                break
+
+        if selected_issue:
+            break
+
+    # Unknown issue
+    if selected_issue is None:
+        return {
+            "category": "Unknown IT Issue",
+            "priority": "High",
+            "diagnosis": "The agent could not identify the issue confidently.",
+            "actions": [
+                "Collect more information from the employee.",
+                "Create an IT support ticket."
+            ],
+            "decision": "ESCALATE TO HUMAN IT SUPPORT"
+        }
+
+    data = knowledge_base[selected_issue]
+
+    # VPN gets escalation decision
+    if selected_issue == "vpn":
+        decision = "ESCALATE TO HUMAN IT SUPPORT"
+        priority = "High"
+    else:
+        decision = "AUTONOMOUS RESOLUTION POSSIBLE"
+        priority = "Medium"
+
+    return {
+        "category": selected_issue.upper(),
+        "priority": priority,
+        "diagnosis": data["diagnosis"],
+        "actions": data["actions"],
+        "decision": decision
+    }
+
+
+# ================= USER INTERFACE =================
+
+st.title("🤖 ResolveAI")
+
+st.subheader(
+    "AI IT Service Desk Autonomous Resolution Agent"
+)
+
+st.write(
+    "ResolveAI analyzes employee IT problems, "
+    "selects relevant knowledge, diagnoses the issue, "
+    "recommends actions and decides whether to resolve "
+    "or escalate the problem."
+)
+
+problem = st.text_area(
+    "📝 Enter your IT problem",
+    placeholder="Example: My WiFi is not connecting."
+)
+
+if st.button("🚀 Analyze & Resolve"):
+
+    if problem.strip() == "":
+        st.warning("Please enter an IT problem.")
+
+    else:
+
+        result = resolve_issue(problem)
+
+        st.success("Agent Analysis Completed!")
+
+        st.write("### 🎫 Ticket Triage")
+        st.write("**Category:**", result["category"])
+        st.write("**Priority:**", result["priority"])
+
+        st.write("### 🔍 Diagnosis")
+        st.write(result["diagnosis"])
+
+        st.write("### 🛠️ Recommended Actions")
+
+        for number, action in enumerate(result["actions"], 1):
+            st.write(f"**{number}.** {action}")
+
+        st.write("### 🤖 Agent Decision")
+
+        if "ESCALATE" in result["decision"]:
+            st.error("🚨 " + result["decision"])
+        else:
+            st.success("✅ " + result["decision"])
